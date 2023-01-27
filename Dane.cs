@@ -19,6 +19,7 @@ namespace Projekt
 {
     public partial class Dane : Form
     {
+        string s;
         MongoClient dbClient;
         IMongoDatabase database;
         IMongoCollection<BsonDocument> collection;
