@@ -17,25 +17,26 @@ namespace Projekt
 {
     public partial class Utwórz : Form
     {
-        List<string> nestedName= new List<string>();
+        List<string> zagnieżdżoneObiekty = new List<string>();
         MongoClient dbClient;
-        IMongoDatabase database;
-        IMongoCollection<BsonDocument> collection;
-        string tabela = "Pracownicy";
-        string tryb = "Widok";
+        IMongoDatabase baza;
+        IMongoCollection<BsonDocument> kolekcja;
+        string nazwabazy;
+        string tabela;
         public Utwórz()
         {
             InitializeComponent();
         }
-        public Utwórz(MongoClient dbClient, IMongoDatabase baza, string tabela)
+        public Utwórz(MongoClient dbClient, IMongoDatabase baza, string tabela, string nazwabazy)
         {
             InitializeComponent();
             this.dbClient = dbClient;
-            this.database = baza;
+            this.baza = baza;
             this.tabela = tabela;
-            collection = database.GetCollection<BsonDocument>(tabela);
+            kolekcja = this.baza.GetCollection<BsonDocument>(tabela);
             Laduj_Dane();
-
+            this.Text = nazwabazy + '/' + baza.DatabaseNamespace.ToString() + '/' + kolekcja.CollectionNamespace.CollectionName.ToString();
+            this.nazwabazy = nazwabazy;
         }
 
 
@@ -45,122 +46,126 @@ namespace Projekt
             dataGridView1.ReadOnly = false;
             try
             {
-                var document = collection.Find(new BsonDocument()).ToList();
+                var document = kolekcja.Find(new BsonDocument()).ToList();
                 foreach (BsonElement kolumna in document[0])
                 {
-                    if (kolumna.Name=="_id") { continue; }
+                    if (kolumna.Name == "_id") { continue; }
                     if (kolumna.Value.BsonType == BsonType.Document)
                     {
-                        BsonDocument nest = kolumna.Value.ToBsonDocument();
-                        nestedName.Add(kolumna.Name.ToString());
+                        BsonDocument zagnieżdżonaKolekcja = kolumna.Value.ToBsonDocument();
+                        zagnieżdżoneObiekty.Add(kolumna.Name.ToString());
 
-                        foreach (BsonElement kolumna2 in nest)
+                        foreach (BsonElement zagnieżdżonaKolumna in zagnieżdżonaKolekcja)
                         {
-                            dataGridView1.Columns.Add(kolumna2.Name + ".Document", kolumna2.Name);
+                            dataGridView1.Columns.Add(zagnieżdżonaKolumna.Name + ".Document", zagnieżdżonaKolumna.Name);
                         }
                         continue;
                     }
                     dataGridView1.Columns.Add(kolumna.Name, kolumna.Name);
                 }
             }
-            catch(Exception)
+            catch (Exception)
             {
-                dataGridView1.Columns.Add("<Nazwa>", "<Nazwa>");
+                dataGridView1.Columns.Add("<Nazwa 1>", "<Nazwa 1>");
             }
 
 
         }
 
-        
+
 
         private async void button3_Click(object sender, EventArgs e)
         {
-            bool nestFlag = false;
+            bool czyZagnieżdżone = false;
             int j = 0;
-            foreach (DataGridViewRow row in dataGridView1.Rows)
+            foreach (DataGridViewRow wiersz in dataGridView1.Rows)
             {
-                if (row.Cells.Count > 0)
+                if (wiersz.Cells.Count > 0)
                 {
-                    bool rowIsEmpty = true;
+                    bool czyWierszPusty = true;
 
-                    foreach (DataGridViewCell cell in row.Cells)
+                    foreach (DataGridViewCell komórka in wiersz.Cells)
                     {
-                        if (cell.Value != null)
+                        if (komórka.Value != null)
                         {
-                            rowIsEmpty = false;
+                            czyWierszPusty = false;
                             break;
                         }
                     }
 
-                    if (rowIsEmpty)
+                    if (czyWierszPusty)
                     {
                         break;
                     }
                 }
-                if (row.Index==dataGridView1.RowCount-1) { break; }
-                var document = new BsonDocument();
-                var nestedDocument = new BsonDocument();
-                foreach (DataGridViewCell cell in row.Cells)
+                if (wiersz.Index == dataGridView1.RowCount - 1) { break; }
+                var wiersze = new BsonDocument();
+                var zagnieżdżoneWiersze = new BsonDocument();
+                foreach (DataGridViewCell komórka in wiersz.Cells)
                 {
-                    
-                    
-                    if (cell.Value == null) { cell.Value = ""; }
-                    string columnName = dataGridView1.Columns[cell.ColumnIndex].Name.ToString();
-                    int CellI= cell.ColumnIndex, ColI= dataGridView1.ColumnCount - 1;
-                    if (columnName.Contains(".Document"))
-                    {
-                        nestFlag = true;
 
-                        nestedDocument.Add(columnName, cell.Value.ToString());
+
+                    if (komórka.Value == null) { komórka.Value = ""; }
+                    string nazwaKolumny = dataGridView1.Columns[komórka.ColumnIndex].Name.ToString();
+                    int indeksKomórki = komórka.ColumnIndex, ilośćKolumn = dataGridView1.ColumnCount - 1;
+                    if (nazwaKolumny.Contains(".Document"))
+                    {
+                        czyZagnieżdżone = true;
+
+                        zagnieżdżoneWiersze.Add(nazwaKolumny, komórka.Value.ToString());
 
                     }
-                    if ((!columnName.Contains(".Document") || CellI == ColI) && nestFlag)
+                    if ((!nazwaKolumny.Contains(".Document") || indeksKomórki == ilośćKolumn) && czyZagnieżdżone)
                     {
-                        document.Add(nestedName[j++].ToString().Replace(".Document",""), nestedDocument);
-                        nestFlag = false;
-                        nestedDocument = new BsonDocument();
+                        wiersze.Add(zagnieżdżoneObiekty[j++].ToString().Replace(".Document", ""), zagnieżdżoneWiersze);
+                        czyZagnieżdżone = false;
+                        zagnieżdżoneWiersze = new BsonDocument();
                         j++;
 
-                    }else if((!columnName.Contains(".Document")))
+                    }
+                    else if ((!nazwaKolumny.Contains(".Document")))
                     {
-                        document.Add(columnName, cell.Value.ToString());
-                        
+                        wiersze.Add(nazwaKolumny, komórka.Value.ToString());
+
                     }
 
                 }
-               await collection.InsertOneAsync(document);
+                await kolekcja.InsertOneAsync(wiersze);
 
             }
             dataGridView1.Rows.Clear();
             dataGridView1.Columns.Clear();
             dataGridView1.Refresh();
             Laduj_Dane();
-            
-        }
 
-        private void button4_Click(object sender, EventArgs e)
+        }
+        private void createRecords_Click(object sender, EventArgs e)
         {
             int i = dataGridView1.ColumnCount;
             dataGridView1.Columns.Remove(dataGridView1.Columns[i - 1]);
         }
-        private void button1_Click(object sender, EventArgs e)
+        private void addColumn_Click(object sender, EventArgs e)
         {
             int i = dataGridView1.ColumnCount;
-            
+
             if (textBox1.Text == "") { dataGridView1.Columns.Add("<Nazwa " + i + ">", "<Nazwa " + i + ">"); }
             else { dataGridView1.Columns.Add(textBox1.Text, textBox1.Text); }
         }
-
-        private void button2_Click(object sender, EventArgs e)
+        private void deleteColumn_Click(object sender, EventArgs e)
         {
-            int i = dataGridView1.RowCount;
-            dataGridView1.Rows.Add("<Wiersz " + i + ">", "<Wiersz " + i + ">");
+            int i = dataGridView1.ColumnCount;
+            dataGridView1.Columns.Remove(dataGridView1.Columns[i - 1]);
         }
-
-        private void button5_Click(object sender, EventArgs e)
+        private void addRow_Click(object sender, EventArgs e)
         {
             int i = dataGridView1.RowCount;
-            dataGridView1.Rows.Remove(dataGridView1.Rows[i-2]);
+            dataGridView1.Rows.Add();
+        }
+        private void deleteRow_Click(object sender, EventArgs e)
+        {
+            int i = dataGridView1.RowCount;
+            dataGridView1.Rows.Remove(dataGridView1.Rows[i - 2]);
         }
     }
+
 }

@@ -20,10 +20,10 @@ namespace Projekt
 {
     public partial class Dane : Form
     {
-        string s;
+
         MongoClient dbClient;
-        IMongoDatabase database;
-        IMongoCollection<BsonDocument> collection;
+        IMongoDatabase baza;
+        IMongoCollection<BsonDocument> kolekcja;
         string tabela="Pracownicy";
         string tryb="Widok";
         public Dane()
@@ -31,28 +31,41 @@ namespace Projekt
             InitializeComponent();
 
         }
-        
-        public Dane(MongoClient dbClient, IMongoDatabase baza,string tabela,string tryb)
+
+        public Dane(MongoClient dbClient, IMongoDatabase baza, string tabela, string tryb, string nazwabazy)
         {
             InitializeComponent();
             this.dbClient = dbClient;
             this.tabela = tabela;
             this.tryb = tryb;
-            database = baza;
+            this.baza = baza;
+            kolekcja = baza.GetCollection<BsonDocument>(tabela);
+            this.Text = nazwabazy+'/'+baza.DatabaseNamespace.ToString() + '/'+kolekcja.CollectionNamespace.CollectionName.ToString();
+            
+        }
+        private void Dane_Load(object sender, EventArgs e)
+        {
+            if (tryb == "edycja")
+            {
+                pracownik_data.ReadOnly = false;
+                deleteRecord.Visible = true;
 
+            }
+            kolekcja = baza.GetCollection<BsonDocument>(tabela);
+            Laduj_Dane();
         }
         private void Laduj_Dane()
         {
-            var document = collection.Find(new BsonDocument()).ToList();
+            var wiersze = kolekcja.Find(new BsonDocument()).ToList();
             try {
-                foreach (BsonElement kolumna in document[0])
+                foreach (BsonElement kolumna in wiersze[0])
                 {
                     if (kolumna.Value.BsonType == BsonType.Document)
                     {
-                        BsonDocument nest = kolumna.Value.ToBsonDocument();
-                        foreach (BsonElement kolumna2 in nest)
+                        BsonDocument zagnieżdżonaKolekcja = kolumna.Value.ToBsonDocument();
+                        foreach (BsonElement zagnieżdżonaKolumna in zagnieżdżonaKolekcja)
                         {
-                            pracownik_data.Columns.Add(kolumna2.Name + "Document.", kolumna2.Name);
+                            pracownik_data.Columns.Add(zagnieżdżonaKolumna.Name + "Document.", zagnieżdżonaKolumna.Name);
                         }
                         continue;
                     }
@@ -61,7 +74,7 @@ namespace Projekt
             }
             catch(ArgumentOutOfRangeException)
             {
-                MessageBox.Show("W kolekcji "+collection.CollectionNamespace+" bazy "+database.DatabaseNamespace+"nie ma żadnych rekordów", "Błąd",
+                MessageBox.Show("W kolekcji "+kolekcja.CollectionNamespace+" bazy "+baza.DatabaseNamespace+"nie ma żadnych rekordów", "Błąd",
             MessageBoxButtons.OK, MessageBoxIcon.Error);
                 this.BeginInvoke(new MethodInvoker(Close));
                 return;
@@ -69,75 +82,53 @@ namespace Projekt
             }
             
 
-            foreach (BsonDocument pracownik in document)
+            foreach (BsonDocument pracownik in wiersze)
             {
-                int row = pracownik_data.Rows.Add();
-                int j = 0;
+                int wiersz = pracownik_data.Rows.Add();
+                int indeksKomórki = 0;
 
                 foreach (BsonElement wartosc in pracownik)
                 {
 
                     if (wartosc.Value.BsonType == BsonType.Document)
                     {
-                        BsonDocument wartosc_nested = wartosc.Value.ToBsonDocument();
-                        foreach (BsonElement wartosc2 in wartosc_nested)
+                        BsonDocument zagnieżdżoneWartości = wartosc.Value.ToBsonDocument();
+                        foreach (BsonElement zagnieżdżonaWartość in zagnieżdżoneWartości)
                         {
-                            pracownik_data.Rows[row].Cells[j++].Value = wartosc2.Value; ;
+                            pracownik_data.Rows[wiersz].Cells[indeksKomórki++].Value = zagnieżdżonaWartość.Value; ;
                         }
                         continue;
                     }
                     try {
-                        pracownik_data.Rows[row].Cells[j++].Value = wartosc.Value;
+                        pracownik_data.Rows[wiersz].Cells[indeksKomórki++].Value = wartosc.Value;
                     }catch(Exception)
                     {
                         pracownik_data.Columns.Add(wartosc.Name,wartosc.Name);
-                        pracownik_data.Rows[row].Cells[--j].Value = wartosc.Value;
+                        pracownik_data.Rows[wiersz].Cells[--indeksKomórki].Value = wartosc.Value;
                     }
                     
                 }
 
             }
         }
-        private void Dane_Load(object sender, EventArgs e)
-        {
-            if (tryb == "edycja") 
-            {
-                pracownik_data.ReadOnly = false;
-                button1.Visible = true;
-
-            }
-            collection = database.GetCollection<BsonDocument>(tabela);
-            Laduj_Dane();
-
-           
-            
-
-
-        }
+        
 
         private void pracownik_data_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
             if (e.ColumnIndex != 0) {
-                int row = e.RowIndex;
-                int column = e.ColumnIndex;
+                int wiersz = e.RowIndex;
+                int kolumna = e.ColumnIndex;
 
-                string cell = pracownik_data.Columns[column].Name;
-                string data_id = pracownik_data.Rows[row].Cells[0].Value.ToString();
-                var filter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(data_id));
-                var update = Builders<BsonDocument>.Update.Set(cell, pracownik_data.Rows[row].Cells[e.ColumnIndex].Value.ToString());
-                var test = collection.UpdateOne(filter, update);
+                string komórka = pracownik_data.Columns[kolumna].Name;
+                string idRekordu = pracownik_data.Rows[wiersz].Cells[0].Value.ToString();
+                var filtrAktualizacji = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(idRekordu));
+                var zapytanie = Builders<BsonDocument>.Update.Set(komórka, pracownik_data.Rows[wiersz].Cells[e.ColumnIndex].Value.ToString());
+                kolekcja.UpdateOne(filtrAktualizacji, zapytanie);
             }
             
 
 
         }
-        
-
-        private void pracownik_data_CellEndEdit(object sender, DataGridViewCellValueEventArgs e)
-        {
-            
-        }
-
         private void refresh_button_Click(object sender, EventArgs e)
         {
             pracownik_data.Rows.Clear();
@@ -148,24 +139,23 @@ namespace Projekt
 
         private void pracownik_data_CellClick(object sender, DataGridViewCellEventArgs e)
         {
-            button1.Enabled = true;
+            deleteRecord.Enabled = true;
         }
-
-        private void button1_Click(object sender, EventArgs e)
+        private void deleteRecord_Click(object sender, EventArgs e)
         {
-            var result = MessageBox.Show("Czy chcesz usunąć ten rekord?", "Usuwanie", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
-            string idCell;
-            if (result == DialogResult.Yes)
+            var zgoda = MessageBox.Show("Czy chcesz usunąć ten rekord?", "Usuwanie", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            string idUsuwanegoRekordu;
+            if (zgoda == DialogResult.Yes)
             {
-                foreach(DataGridViewCell cell in pracownik_data.SelectedCells)
+                foreach (DataGridViewCell komórka in pracownik_data.SelectedCells)
                 {
-                    idCell = pracownik_data.Rows[cell.RowIndex].Cells[0].Value.ToString();
+                    idUsuwanegoRekordu = pracownik_data.Rows[komórka.RowIndex].Cells[0].Value.ToString();
 
-                    var deleteFilter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(idCell));
-                    collection.DeleteOne(deleteFilter);
-                    MessageBox.Show("Usunięto rekord o id: "+idCell,"Usunięto");
+                    var filtrUsuwania = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(idUsuwanegoRekordu));
+                    kolekcja.DeleteOne(filtrUsuwania);
+                    MessageBox.Show("Usunięto rekord o id: " + idUsuwanegoRekordu, "Usunięto");
                 }
-                 
+
             }
         }
     }

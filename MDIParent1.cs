@@ -17,11 +17,13 @@ namespace Projekt
 {
     public partial class MDIParent1 : Form
     {
+       
         List<string> connectionStrings=new List<string>();
         MongoClient dbClient;
         IMongoDatabase database;
         List<String> collection;
         private int childFormNumber = 0;
+        string nazwaBazy;
         Form f1;
         public MDIParent1()
         {
@@ -34,6 +36,7 @@ namespace Projekt
             childForm.MdiParent = this;
             childForm.Text = "Okno " + childFormNumber++;
             childForm.Show();
+
         }
 
         private void OpenFile(object sender, EventArgs e)
@@ -96,23 +99,7 @@ namespace Projekt
 
         private void MDIParent1_Load(object sender, EventArgs e)
         {
-            connectionStrings.Add("mongodb+srv://19705:19705@baza1.sxdiba7.mongodb.net/?retryWrites=true&w=majority");
-            connectionStrings.Add("mongodb+srv://19705:19705@projektcsharp.pdoq67j.mongodb.net/?retryWrites=true&w=majority");
-            toolStripDropDownButton1.DropDownItems.Add("baza1");
-            toolStripDropDownButton1.DropDownItems.Add("projektcsharp");
-            dbClient = new MongoClient("mongodb+srv://19705:19705@baza1.sxdiba7.mongodb.net/?retryWrites=true&w=majority");
-            dbClient = new MongoClient("mongodb+srv://19705:19705@projektcsharp.pdoq67j.mongodb.net/?retryWrites=true&w=majority");
-            var dbList = dbClient.ListDatabases().ToList();
-            foreach (BsonDocument baza in dbList)
-            {
-                
-                foreach (BsonElement nazwa in baza)
-                {
-                    if (nazwa.Name == "name" && nazwa.Value.ToString() != "admin" && nazwa.Value.ToString() != "local")
-                        Bazy.DropDownItems.Add(nazwa.Value.ToString());
-
-                }
-            }
+            
 
         }
         private void setConnection(MongoClient dbClient)
@@ -121,44 +108,24 @@ namespace Projekt
         }
 
 
-        private void KolekcjemenuStrip_ItemClicked(object sender, ToolStripItemClickedEventArgs e)
-        {
-            switch (e.ClickedItem.Text)
-            {
-                case "Wyświetl kolekcję":
-                    f1 = new Dane(dbClient,database, "Pracownicy", "Dane");
-                    f1.MdiParent = this;
-                    f1.Show();
-                    break;
-                case "Klienci":
-                    f1 = new Dane(dbClient, database, "Klienci", "Dane");
-                    f1.MdiParent = this;
-                    f1.Show();
-                    break;
-                case "Produkty":
-                    f1 = new Dane(dbClient, database, "Produkty", "Dane");
-                    f1.MdiParent = this;
-                    f1.Show();
-                    break;
-            }
-        }
+       
 
         private void otwórzToolStripMenuItem_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             switch (e.ClickedItem.Text)
             {
                 case "Wyświetl kolekcję":
-                    f1 = new Dane(dbClient,database,e.ClickedItem.OwnerItem.Text, "odczyt");
+                    f1 = new Dane(dbClient,database,e.ClickedItem.OwnerItem.Text, "odczyt", nazwaBazy);
                     f1.MdiParent = this;
                     f1.Show();
                     break;
                 case "Edytuj kolekcję":
-                    f1 = new Dane(dbClient, database,e.ClickedItem.OwnerItem.Text, "edycja");
+                    f1 = new Dane(dbClient, database,e.ClickedItem.OwnerItem.Text, "edycja", nazwaBazy);
                     f1.MdiParent = this;
                     f1.Show();
                     break;
                 case "Dodaj do kolekcji":
-                    f1 = new Utwórz(dbClient, database, e.ClickedItem.OwnerItem.Text);
+                    f1 = new Utwórz(dbClient, database, e.ClickedItem.OwnerItem.Text, nazwaBazy);
                     f1.MdiParent = this;
                     f1.Show();
                     break;
@@ -201,7 +168,7 @@ namespace Projekt
             try
             {
                 string connectBaza=toolStripTextBox1.Text;
-                string nazwaBazy = toolStripTextBox1.Text.Substring(toolStripTextBox1.Text.IndexOf('@') + 1, toolStripTextBox1.Text.IndexOf('.') - toolStripTextBox1.Text.IndexOf('@') - 1);
+                nazwaBazy = toolStripTextBox1.Text.Substring(toolStripTextBox1.Text.IndexOf('@') + 1, toolStripTextBox1.Text.IndexOf('.') - toolStripTextBox1.Text.IndexOf('@') - 1);
 
             
                 if (toolStripTextBox2.Text == "")
@@ -226,6 +193,9 @@ namespace Projekt
             
             var dbList = dbClient.ListDatabases().ToList();
             Bazy.DropDownItems.Clear();
+            Kolekcje.DropDownItems.Clear();
+            toolStripTextBox1.Clear();
+            toolStripTextBox2.Clear();
             foreach (BsonDocument baza in dbList)
             {
 
@@ -249,6 +219,7 @@ namespace Projekt
                     dbClient = new MongoClient(s);
                     var dbList = dbClient.ListDatabases().ToList();
                     Bazy.DropDownItems.Clear();
+                    Kolekcje.DropDownItems.Clear();
                     foreach (BsonDocument baza in dbList)
                     {
 

@@ -121,6 +121,7 @@
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <EmbeddedResource Include="Utwórz.resx">
       <DependentUpon>Utwórz.cs</DependentUpon>
@@ -181,6 +182,15 @@
     <PackageReference Include="ZstdSharp.Port">
       <Version>0.6.7</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\WebDestination.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="images\WebFolderOpened.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="images\folder_mongodb_icon_161288.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

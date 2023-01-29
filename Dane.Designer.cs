@@ -28,9 +28,10 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Dane));
             this.pracownik_data = new System.Windows.Forms.DataGridView();
             this.refresh_button = new System.Windows.Forms.Button();
-            this.button1 = new System.Windows.Forms.Button();
+            this.deleteRecord = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pracownik_data)).BeginInit();
             this.SuspendLayout();
             // 
@@ -60,27 +61,28 @@
             this.refresh_button.UseVisualStyleBackColor = true;
             this.refresh_button.Click += new System.EventHandler(this.refresh_button_Click);
             // 
-            // button1
+            // deleteRecord
             // 
-            this.button1.Enabled = false;
-            this.button1.FlatStyle = System.Windows.Forms.FlatStyle.System;
-            this.button1.Location = new System.Drawing.Point(94, 294);
-            this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(75, 23);
-            this.button1.TabIndex = 2;
-            this.button1.Text = "Usuń";
-            this.button1.UseVisualStyleBackColor = true;
-            this.button1.Visible = false;
-            this.button1.Click += new System.EventHandler(this.button1_Click);
+            this.deleteRecord.Enabled = false;
+            this.deleteRecord.FlatStyle = System.Windows.Forms.FlatStyle.System;
+            this.deleteRecord.Location = new System.Drawing.Point(94, 294);
+            this.deleteRecord.Name = "deleteRecord";
+            this.deleteRecord.Size = new System.Drawing.Size(75, 23);
+            this.deleteRecord.TabIndex = 2;
+            this.deleteRecord.Text = "Usuń";
+            this.deleteRecord.UseVisualStyleBackColor = true;
+            this.deleteRecord.Visible = false;
+            this.deleteRecord.Click += new System.EventHandler(this.deleteRecord_Click);
             // 
             // Dane
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
-            this.Controls.Add(this.button1);
+            this.Controls.Add(this.deleteRecord);
             this.Controls.Add(this.refresh_button);
             this.Controls.Add(this.pracownik_data);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Dane";
             this.Text = "Dane";
             this.Load += new System.EventHandler(this.Dane_Load);
@@ -93,6 +95,6 @@
 
         private System.Windows.Forms.DataGridView pracownik_data;
         private System.Windows.Forms.Button refresh_button;
-        private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button deleteRecord;
     }
 }
