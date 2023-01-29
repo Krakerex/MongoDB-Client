@@ -158,7 +158,7 @@ namespace Projekt
                     f1.Show();
                     break;
                 case "Dodaj do kolekcji":
-                    f1 = new Utwórz(dbClient);
+                    f1 = new Utwórz(dbClient, database, e.ClickedItem.OwnerItem.Text);
                     f1.MdiParent = this;
                     f1.Show();
                     break;
@@ -198,11 +198,12 @@ namespace Projekt
         private void toolStripButton1_Click(object sender, EventArgs e)
         {
             if (toolStripTextBox1.Text == "") { return; }
-            string connectBaza=toolStripTextBox1.Text;
-            string nazwaBazy = toolStripTextBox1.Text.Substring(toolStripTextBox1.Text.IndexOf('@') + 1, toolStripTextBox1.Text.IndexOf('.') - toolStripTextBox1.Text.IndexOf('@') - 1);
-
             try
             {
+                string connectBaza=toolStripTextBox1.Text;
+                string nazwaBazy = toolStripTextBox1.Text.Substring(toolStripTextBox1.Text.IndexOf('@') + 1, toolStripTextBox1.Text.IndexOf('.') - toolStripTextBox1.Text.IndexOf('@') - 1);
+
+            
                 if (toolStripTextBox2.Text == "")
                 {
                     dbClient = new MongoClient(toolStripTextBox1.Text);

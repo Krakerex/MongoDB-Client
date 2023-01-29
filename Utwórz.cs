@@ -7,88 +7,160 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml.Linq;
 
 namespace Projekt
 {
     public partial class Utwórz : Form
     {
+        List<string> nestedName= new List<string>();
         MongoClient dbClient;
         IMongoDatabase database;
         IMongoCollection<BsonDocument> collection;
+        string tabela = "Pracownicy";
+        string tryb = "Widok";
         public Utwórz()
         {
             InitializeComponent();
         }
-        public Utwórz(MongoClient dbClient)
+        public Utwórz(MongoClient dbClient, IMongoDatabase baza, string tabela)
         {
             InitializeComponent();
             this.dbClient = dbClient;
+            this.database = baza;
+            this.tabela = tabela;
+            collection = database.GetCollection<BsonDocument>(tabela);
+            Laduj_Dane();
+
         }
 
-        private void Utwórz_Load(object sender, EventArgs e)
-        {
-            database = dbClient.GetDatabase("Firma");
 
-        }
 
-        private void dodaj_pracownik_Click(object sender, EventArgs e)
+        private void Laduj_Dane()
         {
-            collection = database.GetCollection<BsonDocument>("Pracownicy");
-            var document = new BsonDocument
+            dataGridView1.ReadOnly = false;
+            try
             {
-                {"Imie", pracownik_imie_textbox.Text },
-                {"Nazwisko", pracownik_nazwisko_textbox.Text },
-                {"Stanowisko", pracownik_stanowisko_textbox.Text },
-                {"Data_urodzenia", pracownik_data_urodzenia_textbox.Text },
-                {"Adres", new BsonDocument
+                var document = collection.Find(new BsonDocument()).ToList();
+                foreach (BsonElement kolumna in document[0])
+                {
+                    if (kolumna.Name=="_id") { continue; }
+                    if (kolumna.Value.BsonType == BsonType.Document)
                     {
-                    {"Miasto",pracownik_miasto_textbox.Text },
-                    {"Ulica",pracownik_ulica_textbox.Text },
-                    {"Nr_domu",pracownik_nr_domu_textbox.Text}
+                        BsonDocument nest = kolumna.Value.ToBsonDocument();
+                        nestedName.Add(kolumna.Name.ToString());
+
+                        foreach (BsonElement kolumna2 in nest)
+                        {
+                            dataGridView1.Columns.Add(kolumna2.Name + ".Document", kolumna2.Name);
+                        }
+                        continue;
+                    }
+                    dataGridView1.Columns.Add(kolumna.Name, kolumna.Name);
+                }
+            }
+            catch(Exception)
+            {
+                dataGridView1.Columns.Add("<Nazwa>", "<Nazwa>");
+            }
+
+
+        }
+
+        
+
+        private async void button3_Click(object sender, EventArgs e)
+        {
+            bool nestFlag = false;
+            int j = 0;
+            foreach (DataGridViewRow row in dataGridView1.Rows)
+            {
+                if (row.Cells.Count > 0)
+                {
+                    bool rowIsEmpty = true;
+
+                    foreach (DataGridViewCell cell in row.Cells)
+                    {
+                        if (cell.Value != null)
+                        {
+                            rowIsEmpty = false;
+                            break;
+                        }
+                    }
+
+                    if (rowIsEmpty)
+                    {
+                        break;
                     }
                 }
+                if (row.Index==dataGridView1.RowCount-1) { break; }
+                var document = new BsonDocument();
+                var nestedDocument = new BsonDocument();
+                foreach (DataGridViewCell cell in row.Cells)
+                {
+                    
+                    
+                    if (cell.Value == null) { cell.Value = ""; }
+                    string columnName = dataGridView1.Columns[cell.ColumnIndex].Name.ToString();
+                    int CellI= cell.ColumnIndex, ColI= dataGridView1.ColumnCount - 1;
+                    if (columnName.Contains(".Document"))
+                    {
+                        nestFlag = true;
 
-            };
-            collection.InsertOne(document);
+                        nestedDocument.Add(columnName, cell.Value.ToString());
 
+                    }
+                    if ((!columnName.Contains(".Document") || CellI == ColI) && nestFlag)
+                    {
+                        document.Add(nestedName[j++].ToString().Replace(".Document",""), nestedDocument);
+                        nestFlag = false;
+                        nestedDocument = new BsonDocument();
+                        j++;
+
+                    }else if((!columnName.Contains(".Document")))
+                    {
+                        document.Add(columnName, cell.Value.ToString());
+                        
+                    }
+
+                }
+               await collection.InsertOneAsync(document);
+
+            }
+            dataGridView1.Rows.Clear();
+            dataGridView1.Columns.Clear();
+            dataGridView1.Refresh();
+            Laduj_Dane();
+            
         }
 
-        private void klient_dodaj_Click(object sender, EventArgs e)
+        private void button4_Click(object sender, EventArgs e)
         {
-            collection = database.GetCollection<BsonDocument>("Klienci");
-            var document = new BsonDocument
-            {
-                {"Imie", klient_imie_textbox.Text },
-                {"Nazwisko", klient_nazwisko_textbox.Text },
-                {"Data_urodzenia", klient_data_urodzenia_textbox.Text },
-                {"Adres", new BsonDocument
-                    {
-                    {"Miasto",klient_miasto_textbox.Text },
-                    {"Ulica",klient_ulica_textbox.Text },
-                    {"Nr_domu,",klient_nr_domu_textbox.Text}
-                    }
-                }
-
-            };
-            collection.InsertOne(document);
+            int i = dataGridView1.ColumnCount;
+            dataGridView1.Columns.Remove(dataGridView1.Columns[i - 1]);
+        }
+        private void button1_Click(object sender, EventArgs e)
+        {
+            int i = dataGridView1.ColumnCount;
+            
+            if (textBox1.Text == "") { dataGridView1.Columns.Add("<Nazwa " + i + ">", "<Nazwa " + i + ">"); }
+            else { dataGridView1.Columns.Add(textBox1.Text, textBox1.Text); }
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
-            collection = database.GetCollection<BsonDocument>("Produkty");
-            var document = new BsonDocument
-            {
-                {"Nazwa", produkt_nazwa_textbox.Text },
-                {"Typ", produkt_typ_textbox.Text },
-                {"Data Produkcji", klient_data_urodzenia_textbox.Text },
-                {"Cena",produkt_cena_textbox.Text}
-                
+            int i = dataGridView1.RowCount;
+            dataGridView1.Rows.Add("<Wiersz " + i + ">", "<Wiersz " + i + ">");
+        }
 
-            };
-            collection.InsertOne(document);
+        private void button5_Click(object sender, EventArgs e)
+        {
+            int i = dataGridView1.RowCount;
+            dataGridView1.Rows.Remove(dataGridView1.Rows[i-2]);
         }
     }
 }

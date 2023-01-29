@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Threading;
 using static MongoDB.Driver.WriteConcern;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Projekt
 {
@@ -28,7 +29,9 @@ namespace Projekt
         public Dane()
         {
             InitializeComponent();
+
         }
+        
         public Dane(MongoClient dbClient, IMongoDatabase baza,string tabela,string tryb)
         {
             InitializeComponent();
@@ -49,7 +52,7 @@ namespace Projekt
                         BsonDocument nest = kolumna.Value.ToBsonDocument();
                         foreach (BsonElement kolumna2 in nest)
                         {
-                            pracownik_data.Columns.Add(kolumna2.Name, kolumna2.Name);
+                            pracownik_data.Columns.Add(kolumna2.Name + "Document.", kolumna2.Name);
                         }
                         continue;
                     }
@@ -97,7 +100,12 @@ namespace Projekt
         }
         private void Dane_Load(object sender, EventArgs e)
         {
-            if (tryb == "edycja") { pracownik_data.ReadOnly = false; }
+            if (tryb == "edycja") 
+            {
+                pracownik_data.ReadOnly = false;
+                button1.Visible = true;
+
+            }
             collection = database.GetCollection<BsonDocument>(tabela);
             Laduj_Dane();
 
@@ -133,8 +141,32 @@ namespace Projekt
         private void refresh_button_Click(object sender, EventArgs e)
         {
             pracownik_data.Rows.Clear();
+            pracownik_data.Columns.Clear();
             pracownik_data.Refresh();
             Laduj_Dane();
+        }
+
+        private void pracownik_data_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            button1.Enabled = true;
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            var result = MessageBox.Show("Czy chcesz usunąć ten rekord?", "Usuwanie", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            string idCell;
+            if (result == DialogResult.Yes)
+            {
+                foreach(DataGridViewCell cell in pracownik_data.SelectedCells)
+                {
+                    idCell = pracownik_data.Rows[cell.RowIndex].Cells[0].Value.ToString();
+
+                    var deleteFilter = Builders<BsonDocument>.Filter.Eq("_id", ObjectId.Parse(idCell));
+                    collection.DeleteOne(deleteFilter);
+                    MessageBox.Show("Usunięto rekord o id: "+idCell,"Usunięto");
+                }
+                 
+            }
         }
     }
 }
