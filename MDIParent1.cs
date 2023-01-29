@@ -1,24 +1,16 @@
 ﻿using MongoDB.Bson;
 using MongoDB.Driver;
-using MongoDB.Driver.Core;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Diagnostics;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Projekt
 {
     public partial class MDIParent1 : Form
     {
-       
-        List<string> connectionStrings=new List<string>();
+
+        List<string> connectionStrings = new List<string>();
         MongoClient dbClient;
         IMongoDatabase database;
         List<String> collection;
@@ -66,7 +58,7 @@ namespace Projekt
             this.Close();
         }
 
-    
+
 
 
         private void CascadeToolStripMenuItem_Click(object sender, EventArgs e)
@@ -99,7 +91,7 @@ namespace Projekt
 
         private void MDIParent1_Load(object sender, EventArgs e)
         {
-            
+
 
         }
         private void setConnection(MongoClient dbClient)
@@ -108,19 +100,19 @@ namespace Projekt
         }
 
 
-       
+
 
         private void otwórzToolStripMenuItem_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
             switch (e.ClickedItem.Text)
             {
                 case "Wyświetl kolekcję":
-                    f1 = new Dane(dbClient,database,e.ClickedItem.OwnerItem.Text, "odczyt", nazwaBazy);
+                    f1 = new Dane(dbClient, database, e.ClickedItem.OwnerItem.Text, "odczyt", nazwaBazy);
                     f1.MdiParent = this;
                     f1.Show();
                     break;
                 case "Edytuj kolekcję":
-                    f1 = new Dane(dbClient, database,e.ClickedItem.OwnerItem.Text, "edycja", nazwaBazy);
+                    f1 = new Dane(dbClient, database, e.ClickedItem.OwnerItem.Text, "edycja", nazwaBazy);
                     f1.MdiParent = this;
                     f1.Show();
                     break;
@@ -143,19 +135,19 @@ namespace Projekt
                 ToolStripMenuItem item;
                 if (kolekcja.Contains(".mongodb"))
                 {
-                     item = new ToolStripMenuItem(kolekcja.Substring(0, kolekcja.Length - 8));
+                    item = new ToolStripMenuItem(kolekcja.Substring(0, kolekcja.Length - 8));
                 }
                 else
                 {
-                     item = new ToolStripMenuItem(kolekcja);
+                    item = new ToolStripMenuItem(kolekcja);
                 }
-                
+
                 item.DropDownItems.Add("Wyświetl kolekcję");
                 item.DropDownItems.Add("Edytuj kolekcję");
                 item.DropDownItems.Add("Dodaj do kolekcji");
                 item.DropDownItemClicked += new System.Windows.Forms.ToolStripItemClickedEventHandler(this.otwórzToolStripMenuItem_DropDownItemClicked);
                 Kolekcje.DropDownItems.Add(item);
-                
+
             }
 
 
@@ -167,10 +159,10 @@ namespace Projekt
             if (toolStripTextBox1.Text == "") { return; }
             try
             {
-                string connectBaza=toolStripTextBox1.Text;
+                string connectBaza = toolStripTextBox1.Text;
                 nazwaBazy = toolStripTextBox1.Text.Substring(toolStripTextBox1.Text.IndexOf('@') + 1, toolStripTextBox1.Text.IndexOf('.') - toolStripTextBox1.Text.IndexOf('@') - 1);
 
-            
+
                 if (toolStripTextBox2.Text == "")
                 {
                     dbClient = new MongoClient(toolStripTextBox1.Text);
@@ -183,14 +175,15 @@ namespace Projekt
                     connectBaza = (toolStripTextBox1.Text.Replace("<password>", toolStripTextBox2.Text));
                     if (!connectionStrings.Contains(connectBaza)) toolStripDropDownButton1.DropDownItems.Add(nazwaBazy);
                     connectionStrings.Add((toolStripTextBox1.Text.Replace("<password>", toolStripTextBox2.Text)));
-                    
+
                 }
-            }catch(Exception ex)
-            {
-                MessageBox.Show(ex.Message,"Połączenie nieudane");
             }
-            
-            
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Połączenie nieudane");
+            }
+
+
             var dbList = dbClient.ListDatabases().ToList();
             Bazy.DropDownItems.Clear();
             Kolekcje.DropDownItems.Clear();
@@ -206,15 +199,15 @@ namespace Projekt
 
                 }
             }
-           
+
         }
 
         private void toolStripDropDownButton1_DropDownItemClicked(object sender, ToolStripItemClickedEventArgs e)
         {
-            
-            foreach(string s in connectionStrings)
+
+            foreach (string s in connectionStrings)
             {
-                if(s.Substring(s.IndexOf('@') + 1, s.IndexOf('.') - s.IndexOf('@') - 1) == e.ClickedItem.Text)
+                if (s.Substring(s.IndexOf('@') + 1, s.IndexOf('.') - s.IndexOf('@') - 1) == e.ClickedItem.Text)
                 {
                     dbClient = new MongoClient(s);
                     var dbList = dbClient.ListDatabases().ToList();
