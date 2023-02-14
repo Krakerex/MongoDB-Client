@@ -7,7 +7,7 @@ using System.Windows.Forms;
 
 namespace Projekt
 {
-    public partial class MDIParent1 : Form
+    public partial class MainForm : Form
     {
 
         List<string> connectionStrings = new List<string>();
@@ -17,7 +17,7 @@ namespace Projekt
         private int childFormNumber = 0;
         string nazwaBazy;
         Form f1;
-        public MDIParent1()
+        public MainForm()
         {
             InitializeComponent();
         }

@@ -1,6 +1,6 @@
 ﻿namespace Projekt
 {
-    partial class MDIParent1
+    partial class MainForm
     {
         /// <summary>
         /// Wymagana zmienna projektanta.
@@ -29,7 +29,7 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MDIParent1));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.menuStrip = new System.Windows.Forms.MenuStrip();
             this.Bazy = new System.Windows.Forms.ToolStripMenuItem();
             this.Kolekcje = new System.Windows.Forms.ToolStripMenuItem();
