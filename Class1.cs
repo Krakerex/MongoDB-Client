@@ -8,5 +8,6 @@ namespace Projekt
 {
     internal class Class1
     {
+        string s = "test";
     }
 }
